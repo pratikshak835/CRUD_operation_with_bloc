@@ -2,6 +2,7 @@ import 'package:crud_operation_using_bloc/crud_opration/bloc/crud_opration_bloc.
 import 'package:crud_operation_using_bloc/crud_opration/bloc/crud_opration_events.dart';
 import 'package:crud_operation_using_bloc/crud_opration/bloc/crud_opration_state.dart';
 import 'package:crud_operation_using_bloc/crud_opration/model/user_model.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -117,6 +118,8 @@ void showBottomSheet({
   required TextEditingController nameController,
   required TextEditingController emailController,
 }) {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -128,43 +131,70 @@ void showBottomSheet({
           left: 20,
           top: 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(hintText: 'Enter Name'),
-            ),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(hintText: 'Enter Email'),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: ElevatedButton(
-                onPressed: () {
-                  final user = User(
-                    name: nameController.text,
-                    email: emailController.text,
-                    id: id,
-                  );
-                  if (isEdit) {
-                    context
-                        .read<UserListBloc>()
-                        .add(UpdateUserEvent(user: user));
-                  } else {
-                    context.read<UserListBloc>().add(AddUserEvent(user: user));
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  hintText: 'Enter Name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a name';
                   }
-                  Navigator.pop(context);
+                  return null;
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                child: Text(
-                  isEdit ? 'Update User' : 'Add User',
-                  style: const TextStyle(color: Colors.white),
+              ),
+              TextFormField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  hintText: 'Enter Email',
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter an email';
+                  }
+                  if (!EmailValidator.validate(value)) {
+                    return 'Enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      final user = User(
+                        name: nameController.text,
+                        email: emailController.text,
+                        id: id,
+                      );
+                      if (isEdit) {
+                        context
+                            .read<UserListBloc>()
+                            .add(UpdateUserEvent(user: user));
+                      } else {
+                        context
+                            .read<UserListBloc>()
+                            .add(AddUserEvent(user: user));
+                      }
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: Text(
+                    isEdit ? 'Update User' : 'Add User',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     },
